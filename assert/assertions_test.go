@@ -447,6 +447,35 @@ func TestNil(t *testing.T) {
 	}
 
 }
+func TestNotNillIsFailingForNonNillableTypes(t *testing.T) {
+	someString := ""
+
+	testCases := []struct {
+		value  interface{}
+		failed bool
+	}{
+		{0, true},
+		{0.0, true},
+		{"", true},
+		{struct{}{}, true},
+		{'x', true},
+		{func() {}, false},
+		{make(chan struct{}), false},
+		{&someString, false},
+		{[]string{}, false},
+		{map[string]string{}, false},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("valueType=%T", testCase.value), func(subtest *testing.T) {
+			mockT := new(testing.T)
+			NotNil(mockT, testCase.value)
+			if testCase.failed != mockT.Failed() {
+				subtest.Errorf("NotNil should return %v for %T type", testCase.failed, testCase.value)
+			}
+		})
+	}
+}
 
 func TestTrue(t *testing.T) {
 
