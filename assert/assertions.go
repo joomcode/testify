@@ -20,7 +20,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pmezard/go-difflib/difflib"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 //go:generate sh -c "cd ../_codegen && go build && cd - && ../_codegen/_codegen -output-package=assert -template=assertion_format.go.tmpl"
@@ -498,6 +498,10 @@ func Exactly(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}
 //
 //    assert.NotNil(t, err)
 func NotNil(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
+	if !isNilable(object) {
+		Fail(t, "Checked object type is not nilable", "%T", object)
+		return false
+	}
 	if !isNil(object) {
 		return true
 	}
@@ -518,32 +522,37 @@ func containsKind(kinds []reflect.Kind, kind reflect.Kind) bool {
 	return false
 }
 
-// isNil checks if a specified object is nil or not, without Failing.
+// isNil checks if a specified object is nil or not, panics if object is not nilable
 func isNil(object interface{}) bool {
 	if object == nil {
 		return true
 	}
 
-	value := reflect.ValueOf(object)
-	kind := value.Kind()
-	isNilableKind := containsKind(
+	return reflect.ValueOf(object).IsNil()
+}
+
+// isNil checks if a specified object is nilable type
+func isNilable(object interface{}) bool {
+	if object == nil {
+		return true
+	}
+	kind := reflect.TypeOf(object).Kind()
+	return containsKind(
 		[]reflect.Kind{
 			reflect.Chan, reflect.Func,
 			reflect.Interface, reflect.Map,
 			reflect.Ptr, reflect.Slice},
 		kind)
-
-	if isNilableKind && value.IsNil() {
-		return true
-	}
-
-	return false
 }
 
 // Nil asserts that the specified object is nil.
 //
 //    assert.Nil(t, err)
 func Nil(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
+	if !isNilable(object) {
+		Fail(t, "Checked object type is not nilable: %T", object)
+		return false
+	}
 	if isNil(object) {
 		return true
 	}

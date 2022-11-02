@@ -419,6 +419,11 @@ func TestNotNil(t *testing.T) {
 	if NotNil(mockT, (*struct{})(nil)) {
 		t.Error("NotNil should return false: object is (*struct{})(nil)")
 	}
+	if mockT := new(mockTestingT); NotNil(mockT, 1) {
+		t.Error("NotNil should return false")
+	} else if !strings.Contains(mockT.errorString(), "Checked object type is not nilable") {
+		t.Error("Should fail on non-nilable objects")
+	}
 
 }
 
@@ -434,6 +439,11 @@ func TestNil(t *testing.T) {
 	}
 	if Nil(mockT, new(AssertionTesterConformingObject)) {
 		t.Error("Nil should return false: object is not nil")
+	}
+	if mockT := new(mockTestingT); Nil(mockT, 1) {
+		t.Error("Nil should return false")
+	} else if !strings.Contains(mockT.errorString(), "Checked object type is not nilable") {
+		t.Error("Should fail on non-nilable objects")
 	}
 
 }
